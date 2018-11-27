@@ -1,5 +1,5 @@
 
-#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub enum KeyType {
     New,
     Old,
@@ -10,14 +10,14 @@ pub enum KeyType {
 pub struct OpaqueKeyError;
 
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct CourseKey {
     key: String,
     keytype: KeyType,
 }
 
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct UsageKey {
     course_key: CourseKey,
     key: String,
@@ -123,6 +123,10 @@ impl UsageKey {
 
     pub fn keytype(&self) -> KeyType {
         self.course_key.keytype
+    }
+
+    pub fn course_key(&self) -> &CourseKey {
+        &self.course_key
     }
 
     pub fn org(&self) -> &str {
@@ -261,19 +265,18 @@ impl std::str::FromStr for PartialUsageKey {
         if key.starts_with("block-v1:") {
             let chunks: Vec<&str> = key[9..].split("+").collect();
             if chunks.len() == 5 {
-                let org = chunks.get(0).ok_or(OpaqueKeyError)?;
-                let course = chunks.get(1).ok_or(OpaqueKeyError)?;
-                let run = chunks.get(2).ok_or(OpaqueKeyError)?;
-                let course_key = CourseKey::new(org, course, run, KeyType::New);
+                let _org = chunks.get(0).ok_or(OpaqueKeyError)?;
+                let _course = chunks.get(1).ok_or(OpaqueKeyError)?;
+                let _run = chunks.get(2).ok_or(OpaqueKeyError)?;
                 let blocktype = chunks.get(3).ok_or(OpaqueKeyError)?;
                 let name = chunks.get(4).ok_or(OpaqueKeyError)?;
                 if !blocktype.starts_with("type@") {
-                    return Err(OpaqueKeyError)
+                    Err(OpaqueKeyError)
+                } else if !name.starts_with("block@") {
+                    Err(OpaqueKeyError)
+                } else {
+                    Ok(PartialUsageKey { key: key.to_owned(), keytype: KeyType::New })
                 }
-                if !name.starts_with("block@") {
-                    return Err(OpaqueKeyError)
-                }
-                Ok(PartialUsageKey { key: key.to_owned(), keytype: KeyType::New })
             } else {
                 Err(OpaqueKeyError)
             }

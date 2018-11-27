@@ -1,11 +1,13 @@
 use std::error::Error;
 
+#[derive(Debug)]
 pub enum ServiceError {
     MultipleResults,
-    Other(Box<dyn Error>),
+    Other(Box<Error>),
 }
 
 pub type Result<T> = std::result::Result<T, ServiceError>;
 
-pub mod coursestructure;
+pub mod blockcompletions;
+pub mod course;
 pub mod enrollment;
