@@ -1,7 +1,10 @@
-use opaquekeys::CourseKey;
+use std::collections::BTreeMap;
+
+use opaquekeys::{CourseKey, UsageKey};
 
 use crate::User;
-use crate::ports::Result;
+use crate::ports::{Result, ServiceError};
+use crate::ports::course::CourseService;
 use crate::ports::enrollment::{Enrollment, EnrollmentQuery, EnrollmentService, Role, State};
 
 pub struct StubEnrollmentAdapter {
@@ -49,3 +52,18 @@ impl EnrollmentService for StubEnrollmentAdapter {
     }
 }
 
+
+pub struct StubCourseAdapter {
+    coursekey: CourseKey,
+    blocks: BTreeMap<UsageKey, Vec<UsageKey>>
+}
+
+impl CourseService for StubCourseAdapter {
+    fn get_course(&self, coursekey: &CourseKey) -> Result<BTreeMap<UsageKey, Vec<UsageKey>>> {
+        if coursekey == &self.coursekey {
+            Ok(self.blocks.clone())
+        } else {
+            Err(ServiceError::NotFound)
+        }
+    }
+}

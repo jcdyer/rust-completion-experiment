@@ -2,6 +2,7 @@ use std::error::Error;
 
 #[derive(Debug)]
 pub enum ServiceError {
+    NotFound,
     MultipleResults,
     Other(Box<Error>),
 }
