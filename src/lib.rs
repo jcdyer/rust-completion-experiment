@@ -1,4 +1,3 @@
-
 use opaquekeys::{CourseKey, UsageKey};
 
 use crate::aggregator::Course;

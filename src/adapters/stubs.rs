@@ -19,44 +19,52 @@ impl StubBlockCompletionAdapter {
 }
 
 impl BlockCompletionService for StubBlockCompletionAdapter {
-    fn get_course_blockcompletions(&self, coursekey: &CourseKey) -> Result<BTreeMap<(User, UsageKey), BlockCompletion>> {
-        Ok(self.blockcompletions.iter()
+    fn get_course_blockcompletions(
+        &self,
+        coursekey: &CourseKey,
+    ) -> Result<BTreeMap<(User, UsageKey), BlockCompletion>> {
+        Ok(self.blockcompletions
+            .iter()
             .filter(|bc| bc.block_key.course_key() == coursekey)
             .map(|bc| ((bc.user.clone(), bc.block_key.clone()), bc.clone()))
             .collect())
     }
-    fn get_user_blockcompletions(&self, user: &User, coursekey: &CourseKey) -> Result<BTreeMap<(User, UsageKey), BlockCompletion>> {
-        Ok(self.blockcompletions.iter()
+    fn get_user_blockcompletions(
+        &self,
+        user: &User,
+        coursekey: &CourseKey,
+    ) -> Result<BTreeMap<(User, UsageKey), BlockCompletion>> {
+        Ok(self.blockcompletions
+            .iter()
             .filter(|bc| bc.block_key.course_key() == coursekey)
             .filter(|bc| &bc.user == user)
             .map(|bc| ((bc.user.clone(), bc.block_key.clone()), bc.clone()))
             .collect())
     }
-
 }
 pub struct StubEnrollmentAdapter {
     enrollments: Vec<Enrollment>,
 }
 
 impl StubEnrollmentAdapter {
-       pub fn new(enrollments: Vec<(User, CourseKey)>) -> StubEnrollmentAdapter {
-        let enrollments =
-            enrollments.into_iter()
-                             .map(|(user, course)| {
-                                 Enrollment {
-                                     user,
-                                     course,
-                                     role: Role::Learner,
-                                     state: State::Active,
-                                 }
-                             }).collect();
+    pub fn new(enrollments: Vec<(User, CourseKey)>) -> StubEnrollmentAdapter {
+        let enrollments = enrollments
+            .into_iter()
+            .map(|(user, course)| Enrollment {
+                user,
+                course,
+                role: Role::Learner,
+                state: State::Active,
+            })
+            .collect();
         StubEnrollmentAdapter { enrollments }
     }
 }
 
 impl EnrollmentService for StubEnrollmentAdapter {
     fn query_enrollment(&self, query: &EnrollmentQuery) -> Result<Vec<Enrollment>> {
-        Ok(self.enrollments.iter()
+        Ok(self.enrollments
+            .iter()
             .filter(|enrollment| {
                 let users = query.users.clone().unwrap_or_else(Vec::new);
                 if users.is_empty() {
@@ -74,21 +82,22 @@ impl EnrollmentService for StubEnrollmentAdapter {
                 }
             })
             .cloned()
-            .collect()
-        )
+            .collect())
     }
 }
 
-
 pub struct StubCourseAdapter {
     coursekey: CourseKey,
-    blocks: BTreeMap<UsageKey, Vec<UsageKey>>
+    blocks: BTreeMap<UsageKey, Vec<UsageKey>>,
 }
 
 impl StubCourseAdapter {
     /// This does not check that the usage keys actually belong to the right
     /// course, or even the same course.
-    pub fn new(coursekey: CourseKey, blocks: BTreeMap<UsageKey, Vec<UsageKey>>) -> StubCourseAdapter {
+    pub fn new(
+        coursekey: CourseKey,
+        blocks: BTreeMap<UsageKey, Vec<UsageKey>>,
+    ) -> StubCourseAdapter {
         StubCourseAdapter { coursekey, blocks }
     }
 }

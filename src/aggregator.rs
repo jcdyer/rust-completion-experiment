@@ -62,7 +62,8 @@ impl CourseNode {
             Some(children) => children.clone(),
             None => Vec::new(),
         };
-        let children = children.iter()
+        let children = children
+            .iter()
             .map(|key| CourseNode::new(key.clone(), structure, xblock_modes))
             .collect();
         CourseNode {
