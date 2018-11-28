@@ -1,4 +1,3 @@
-
 use opaquekeys::CourseKey;
 
 use crate::User;
@@ -34,13 +33,15 @@ impl EnrollmentQuery {
         self
     }
 
-    pub fn add_users(mut self, mut users: Vec<User>) -> EnrollmentQuery {
+    pub fn add_users(mut self, users: &[User]) -> EnrollmentQuery {
         if self.users.is_none() {
             self.users = Some(Vec::with_capacity(users.len()))
         }
-        let _ = self.users
-            .iter_mut()
-            .map(|usersfilter| usersfilter.append(&mut users));
+        let usersfilter = self.users.get_or_insert_with({
+            let userlen = users.len();
+            move || Vec::with_capacity(userlen)
+        });
+        usersfilter.extend_from_slice(&users);
         self
     }
 }
@@ -48,15 +49,15 @@ impl EnrollmentQuery {
 pub trait EnrollmentService {
     fn query_enrollment(&self, query: &EnrollmentQuery) -> Result<Vec<Enrollment>>;
     fn get_enrolled_users(&self, course: &CourseKey) -> Result<Vec<Enrollment>> {
-        self.query_enrollment(&EnrollmentQuery::default().add_courses(&vec![course.clone()]))
+        self.query_enrollment(&EnrollmentQuery::default().add_courses(&[course.clone()]))
     }
     fn get_enrolled_courses(&self, user: &User) -> Result<Vec<Enrollment>> {
-        self.query_enrollment(&EnrollmentQuery::default().add_users(vec![user.clone()]))
+        self.query_enrollment(&EnrollmentQuery::default().add_users(&[user.clone()]))
     }
-    fn get_enrollment(&self, user: &User, course: &CourseKey) -> Result<Option<Enrollment>> {
+    fn get_enrollment(&self, user: &User, coursekey: &CourseKey) -> Result<Option<Enrollment>> {
         let mut enrollments = self.query_enrollment(&EnrollmentQuery::default()
-            .add_courses(&vec![course.clone()])
-            .add_users(vec![user.clone()]))?;
+            .add_courses(&[coursekey.clone()])
+            .add_users(&[user.clone()]))?;
         let len = enrollments.len();
         if len == 0 {
             Ok(None)
@@ -66,7 +67,14 @@ pub trait EnrollmentService {
             Err(ServiceError::MultipleResults)
         }
     }
-    fn is_enrolled(&self, user: &User, course: &CourseKey) -> Result<bool>;
+    fn is_enrolled(&self, user: &User, course: &CourseKey) -> Result<bool> {
+        self.get_enrollment(user, course)
+            .map(|enrollment| enrollment.is_some())
+            .or_else(|err| match err {
+                ServiceError::MultipleResults => Ok(false),
+                err => Err(err),
+            })
+    }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]

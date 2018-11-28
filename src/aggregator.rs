@@ -3,7 +3,7 @@ use std::collections::BTreeMap;
 use opaquekeys::{CourseKey, UsageKey};
 
 use crate::{Aggregator, BlockCompletion, User};
-use crate::xblock::{CompletionMode, XBlock, get_xblock_modes};
+use crate::xblock::{get_xblock_modes, CompletionMode, XBlock};
 
 pub struct Course {
     coursekey: CourseKey,
@@ -14,7 +14,8 @@ impl Course {
     pub fn from_structure(structure: &BTreeMap<UsageKey, Vec<UsageKey>>) -> Course {
         let mut rootblock = None;
         for usagekey in structure.keys() {
-            if usagekey.blocktype() == "course" {  // This will break for course subgraphs, which won't have a course.
+            if usagekey.blocktype() == "course" {
+                // This will break for course subgraphs, which won't have a course.
                 rootblock = Some(usagekey);
             }
         }
@@ -42,14 +43,24 @@ struct CourseNode {
 }
 
 impl CourseNode {
-    fn new(blockkey: UsageKey, _structure: &BTreeMap<UsageKey, Vec<UsageKey>>, xblock_modes: &BTreeMap<String, CompletionMode>) -> CourseNode {
+    fn new(
+        blockkey: UsageKey,
+        _structure: &BTreeMap<UsageKey, Vec<UsageKey>>,
+        xblock_modes: &BTreeMap<String, CompletionMode>,
+    ) -> CourseNode {
         let name = blockkey.blocktype().to_owned();
-        let mode = (*xblock_modes.get(&name).unwrap_or(&CompletionMode::Completable)).clone();
-        let xblock = XBlock { name, mode, block_key: blockkey.clone() };
+        let mode = *xblock_modes
+            .get(&name)
+            .unwrap_or(&CompletionMode::Completable);
+        let xblock = XBlock {
+            name,
+            mode,
+            block_key: blockkey.clone(),
+        };
         CourseNode {
             xblock,
             blockkey,
-            children: vec![]  // Fix this
+            children: vec![], // Fix this
         }
     }
 

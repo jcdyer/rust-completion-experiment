@@ -1,4 +1,3 @@
-use std::collections::BTreeMap;
 
 use opaquekeys::{CourseKey, UsageKey};
 
@@ -7,6 +6,7 @@ use crate::ports::blockcompletions::BlockCompletionService;
 use crate::ports::course::CourseService;
 use crate::ports::enrollment::EnrollmentService;
 
+pub mod adapters;
 pub mod aggregator;
 pub mod ports;
 pub mod xblock;
@@ -61,17 +61,21 @@ where
         }
     }
 
-    pub fn get_user_completion(&self, user: User, coursekey: CourseKey) -> Option<Vec<Aggregator>> {
+    pub fn get_user_completion(
+        &self,
+        user: &User,
+        coursekey: &CourseKey,
+    ) -> Option<Vec<Aggregator>> {
         if self.enrollment_service
-            .is_enrolled(&user, &coursekey)
+            .is_enrolled(user, coursekey)
             .unwrap_or(true)
         {
-            let structure = self.course_service.get_course(&coursekey).unwrap(); // CRASH!!!
+            let structure = self.course_service.get_course(coursekey).unwrap(); // CRASH!!!
             let course = Course::from_structure(&structure);
             let blockcompletions = self.blockcompletion_service
-                .get_user_blockcompletions(&user, &coursekey)
-                .unwrap_or(BTreeMap::new());
-            Some(course.aggregate(&user, &blockcompletions))
+                .get_user_blockcompletions(user, coursekey)
+                .unwrap_or_default();
+            Some(course.aggregate(user, &blockcompletions))
         } else {
             None
         }
