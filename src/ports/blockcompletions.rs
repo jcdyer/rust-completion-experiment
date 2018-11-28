@@ -10,6 +10,7 @@ pub trait BlockCompletionService {
         &self,
         coursekey: &CourseKey,
     ) -> Result<BTreeMap<(User, UsageKey), BlockCompletion>>;
+
     fn get_user_blockcompletions(
         &self,
         user: &User,

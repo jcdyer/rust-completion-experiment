@@ -8,6 +8,7 @@ pub enum CompletionMode {
     Excluded,
 }
 
+#[derive(Debug)]
 pub struct XBlock {
     pub name: String,
     pub block_key: UsageKey,

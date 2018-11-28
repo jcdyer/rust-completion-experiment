@@ -1,5 +1,5 @@
 [package]
-name = "rust-completion-experiment"
+name = "completion"
 version = "0.1.0"
 authors = ["J. Cliff Dyer <jcd@sdf.org>"]
 edition = "2018"

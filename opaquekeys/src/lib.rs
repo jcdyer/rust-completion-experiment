@@ -187,7 +187,7 @@ impl std::fmt::Display for UsageKey {
 
 
 impl PartialUsageKey {
-    pub fn try_into_usage_key(&self) -> Option<UsageKey> {
+    pub fn try_promote(&self) -> Option<UsageKey> {
         match self.keytype {
             KeyType::Old => None,
             KeyType::New => {
@@ -332,7 +332,7 @@ mod tests {
         assert_eq!(
             "block-v1:edX+DemoX+Demo2018+type@html+block@introduction".parse::<PartialUsageKey>()
                 .unwrap()
-                .try_into_usage_key()
+                .try_promote()
                 .unwrap(),
             UsageKey::from_parts("course-v1:edX+DemoX+Demo2018".parse().unwrap(), "html", "introduction")
         )

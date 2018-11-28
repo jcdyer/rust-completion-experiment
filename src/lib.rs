@@ -13,23 +13,22 @@ pub mod xblock;
 
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub struct User {
-    username: String,
-    email: String,
+    pub username: String,
 }
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct BlockCompletion {
-    user: User,
-    block_key: UsageKey,
-    completion: f64,
+    pub user: User,
+    pub block_key: UsageKey,
+    pub completion: f64,
 }
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Aggregator {
-    user: User,
-    block_key: UsageKey,
-    earned: f64,
-    possible: f64,
+    pub user: User,
+    pub block_key: UsageKey,
+    pub earned: f64,
+    pub possible: f64,
 }
 
 pub struct App<B, C, E>

@@ -36,6 +36,7 @@ impl Course {
     }
 }
 
+#[derive(Debug)]
 struct CourseNode {
     xblock: XBlock,
     blockkey: UsageKey,
@@ -45,7 +46,7 @@ struct CourseNode {
 impl CourseNode {
     fn new(
         blockkey: UsageKey,
-        _structure: &BTreeMap<UsageKey, Vec<UsageKey>>,
+        structure: &BTreeMap<UsageKey, Vec<UsageKey>>,
         xblock_modes: &BTreeMap<String, CompletionMode>,
     ) -> CourseNode {
         let name = blockkey.blocktype().to_owned();
@@ -57,10 +58,17 @@ impl CourseNode {
             mode,
             block_key: blockkey.clone(),
         };
+        let children = match structure.get(&blockkey) {
+            Some(children) => children.clone(),
+            None => Vec::new(),
+        };
+        let children = children.iter()
+            .map(|key| CourseNode::new(key.clone(), structure, xblock_modes))
+            .collect();
         CourseNode {
             xblock,
             blockkey,
-            children: vec![], // Fix this
+            children,
         }
     }
 
@@ -85,6 +93,7 @@ impl CourseNode {
                 )
             }
             CompletionMode::Aggregator => {
+                println!("Aggregating block {:?}", self);
                 let mut combined_aggs = vec![];
                 let mut earned = 0.0;
                 let mut possible = 0.0;
