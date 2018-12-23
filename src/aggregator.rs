@@ -34,6 +34,10 @@ impl Course {
     ) -> Vec<Aggregator> {
         self.root.aggregate(user, completions).0
     }
+
+    pub fn coursekey(&self) -> &CourseKey {
+        &self.coursekey
+    }
 }
 
 #[derive(Debug)]

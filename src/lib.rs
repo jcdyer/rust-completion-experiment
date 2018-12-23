@@ -1,3 +1,6 @@
+#[macro_use]
+extern crate mysql;
+
 use opaquekeys::{CourseKey, UsageKey};
 
 use crate::aggregator::Course;

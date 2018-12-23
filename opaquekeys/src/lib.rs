@@ -270,9 +270,7 @@ impl std::str::FromStr for PartialUsageKey {
                 let _run = chunks.get(2).ok_or(OpaqueKeyError)?;
                 let blocktype = chunks.get(3).ok_or(OpaqueKeyError)?;
                 let name = chunks.get(4).ok_or(OpaqueKeyError)?;
-                if !blocktype.starts_with("type@") {
-                    Err(OpaqueKeyError)
-                } else if !name.starts_with("block@") {
+                if !blocktype.starts_with("type@") || !name.starts_with("block@") {
                     Err(OpaqueKeyError)
                 } else {
                     Ok(PartialUsageKey { key: key.to_owned(), keytype: KeyType::New })
