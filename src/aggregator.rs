@@ -98,7 +98,6 @@ impl CourseNode {
                 )
             }
             CompletionMode::Aggregator => {
-                println!("Aggregating block {:?}", self);
                 let mut combined_aggs = vec![];
                 let mut earned = 0.0;
                 let mut possible = 0.0;

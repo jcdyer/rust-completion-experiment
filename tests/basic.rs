@@ -1,7 +1,7 @@
 #![cfg(test)]
 
 use completion::{Aggregator, App, BlockCompletion, User};
-use completion::adapters::stubs;
+use completion::adapters::{db, stubs};
 
 use opaquekeys::{CourseKey, PartialUsageKey};
 
@@ -73,6 +73,78 @@ fn test_get_user_completion() {
                 block_key: usagekeys[0].clone(),
                 earned: 1.0,
                 possible: 2.0,
+            },
+        ]
+    )
+}
+
+
+#[test]
+fn test_db_adapter() {
+    let user = User {
+        username: "cliff".to_owned(),
+    };
+    let course: CourseKey = "course-v1:edX+DemoX+Demo_Course".parse().unwrap();
+    let usagekeys: Vec<_> = vec![
+        "block-v1:edX+DemoX+Demo_Course+type@course+block@course"
+            .parse()
+            .unwrap(),
+        "block-v1:edX+DemoX+Demo_Course+type@chapter+block@chapter1"
+            .parse()
+            .unwrap(),
+        "block-v1:edX+DemoX+Demo_Course+type@html+block@intro"
+            .parse()
+            .unwrap(),
+        "block-v1:edX+DemoX+Demo_Course+type@survey+block@questionnaire"
+            .parse()
+            .unwrap(),
+        "block-v1:edX+DemoX+Demo_Course+type@html+block@content"
+            .parse()
+            .unwrap(),
+        "block-v1:edX+DemoX+Demo_Course+type@html+block@retrospective"
+            .parse()
+            .unwrap(),
+    ].into_iter()
+        .map(|key: PartialUsageKey| key.try_promote().unwrap())
+        .collect();
+
+    let blockcompletion_service = db::MySqlBlockCompletionAdapter::new().expect("mysql connect");
+    let course_service = stubs::StubCourseAdapter::new(
+        course.clone(),
+        vec![
+            (usagekeys[0].clone(), vec![usagekeys[1].clone()]),
+            (
+                usagekeys[1].clone(),
+                vec![
+                    usagekeys[2].clone(),
+                    usagekeys[3].clone(),
+                    usagekeys[4].clone(),
+                    usagekeys[5].clone(),
+                ],
+            ),
+        ].into_iter()
+            .collect(),
+    );
+
+    let enrollment_service =
+        stubs::StubEnrollmentAdapter::new(vec![(user.clone(), course.clone())]);
+
+    let app = App::new(blockcompletion_service, course_service, enrollment_service);
+    let result = app.get_user_completion(&user, &course).unwrap();
+    assert_eq!(
+        result,
+        vec![
+            Aggregator {
+                user: user.clone(),
+                block_key: usagekeys[1].clone(),
+                earned: 3.0,
+                possible: 4.0,
+            },
+            Aggregator {
+                user: user.clone(),
+                block_key: usagekeys[0].clone(),
+                earned: 3.0,
+                possible: 4.0,
             },
         ]
     )

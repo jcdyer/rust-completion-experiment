@@ -8,13 +8,17 @@ use crate::ports::Result;
 use crate::{BlockCompletion, User};
 
 fn connect() -> Option<mysql::Pool> {
-    mysql::Pool::new(format!(
-        "mysql://{}:{}@{}:{}/completion",
+    match mysql::Pool::new(format!(
+        "mysql://{}:{}@{}:{}/{}",
         env!("EDXAGG_MYSQL_USER"),
         env!("EDXAGG_MYSQL_PASSWORD"),
         option_env!("EDXAGG_MYSQL_HOST").unwrap_or("localhost"),
         option_env!("EDXAGG_MYSQL_PORT").unwrap_or("3306"),
-    )).ok()
+        option_env!("EDXAGG_MYSQL_DATABASE").unwrap_or("completion"),
+    )) {
+        Ok(conn) => Some(conn),
+        Err(error) => panic!("{}", error),
+    }
 }
 
 pub struct MySqlBlockCompletionAdapter {
@@ -97,11 +101,7 @@ impl BlockCompletionService for MySqlBlockCompletionAdapter {
                 result
                     .map(|rowresult| rowresult.unwrap())
                     .map(|row| {
-                        let (username, blockkeyraw, completion): (
-                            _,
-                            String,
-                            _,
-                        ) = mysql::from_row(row);
+                        let (username, _coursekey, blockkeyraw, completion) = mysql::from_row::<(String, String, String, f64)>(row);
                         let block_key: UsageKey = blockkeyraw
                             .parse::<PartialUsageKey>()
                             .unwrap()
