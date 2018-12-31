@@ -5,17 +5,20 @@ use opaquekeys::CourseKey;
 use completion::{App, User};
 use completion::adapters::{db, rest};
 
-
 fn main() -> Result<(), Box<Error>> {
     let args = clap::App::new(env!("CARGO_PKG_NAME"))
         .author(env!("CARGO_PKG_AUTHORS"))
         .version(env!("CARGO_PKG_VERSION"))
-        .arg(clap::Arg::with_name("user")
-            .takes_value(true)
-            .required(true))
-        .arg(clap::Arg::with_name("course_key")
-            .takes_value(true)
-            .required(true))
+        .arg(
+            clap::Arg::with_name("user")
+                .takes_value(true)
+                .required(true),
+        )
+        .arg(
+            clap::Arg::with_name("course_key")
+                .takes_value(true)
+                .required(true),
+        )
         .get_matches();
 
     let username = args.value_of("user").unwrap().to_owned();
@@ -36,7 +39,13 @@ fn main() -> Result<(), Box<Error>> {
     let app = App::new(blockcompletion_service, course_service, enrollment_service);
     let result = app.get_user_completion(&user, &course).unwrap();
     for agg in result {
-        println!("{}: {}/{} ({:.2}%)", agg.block_key, agg.earned, agg.possible, agg.percent() * 100.0);
+        println!(
+            "{}: {}/{} ({:.2}%)",
+            agg.block_key,
+            agg.earned,
+            agg.possible,
+            agg.percent() * 100.0
+        );
     }
     Ok(())
 }

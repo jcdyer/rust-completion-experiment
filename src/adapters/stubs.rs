@@ -50,10 +50,7 @@ impl StubEnrollmentAdapter {
     pub fn new(enrollments: Vec<(User, CourseKey)>) -> StubEnrollmentAdapter {
         let enrollments = enrollments
             .into_iter()
-            .map(|(user, course)| Enrollment {
-                user,
-                course,
-            })
+            .map(|(user, course)| Enrollment { user, course })
             .collect();
         StubEnrollmentAdapter { enrollments }
     }

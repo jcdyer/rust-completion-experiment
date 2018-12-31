@@ -78,7 +78,6 @@ fn test_get_user_completion() {
     )
 }
 
-
 #[test]
 fn test_db_adapter() {
     let user = User {
@@ -133,7 +132,6 @@ fn test_db_adapter() {
         ].into_iter()
             .collect(),
     );
-
 
     let app = App::new(blockcompletion_service, course_service, enrollment_service);
     let result = app.get_user_completion(&user, &course).unwrap();

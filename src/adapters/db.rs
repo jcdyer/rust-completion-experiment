@@ -4,7 +4,7 @@ use mysql;
 use opaquekeys::{CourseKey, PartialUsageKey, UsageKey};
 
 use crate::ports::blockcompletions::BlockCompletionService;
-use crate::ports::enrollment::{EnrollmentService, EnrollmentQuery, Enrollment};
+use crate::ports::enrollment::{Enrollment, EnrollmentQuery, EnrollmentService};
 use crate::ports::Result;
 use crate::{BlockCompletion, User};
 
@@ -102,7 +102,8 @@ impl BlockCompletionService for MySqlBlockCompletionAdapter {
                 result
                     .map(|rowresult| rowresult.unwrap())
                     .map(|row| {
-                        let (username, _coursekey, blockkeyraw, completion) = mysql::from_row::<(String, String, String, f64)>(row);
+                        let (username, _coursekey, blockkeyraw, completion) =
+                            mysql::from_row::<(String, String, String, f64)>(row);
                         let block_key: UsageKey = blockkeyraw
                             .parse::<PartialUsageKey>()
                             .unwrap()
@@ -138,10 +139,24 @@ impl MySqlEnrollmentAdapter {
         let mut qstr = String::from("SELECT username, course_id FROM student_courseenrollment JOIN auth_user ON auth_user.id = user_id");
         let mut where_clauses = vec![];
         if let Some(ref courses) = query.courses {
-            where_clauses.push(format!(" course_id IN ({})", courses.iter().map(|course_key| format!("'{}'", course_key)).collect::<Vec<_>>().join(",")));
+            where_clauses.push(format!(
+                " course_id IN ({})",
+                courses
+                    .iter()
+                    .map(|course_key| format!("'{}'", course_key))
+                    .collect::<Vec<_>>()
+                    .join(",")
+            ));
         }
         if let Some(ref users) = query.users {
-            where_clauses.push(format!(" username IN ('{}')", users.iter().map(|user| user.username.as_ref()).collect::<Vec<_>>().join(",")));
+            where_clauses.push(format!(
+                " username IN ('{}')",
+                users
+                    .iter()
+                    .map(|user| user.username.as_ref())
+                    .collect::<Vec<_>>()
+                    .join(",")
+            ));
         }
         if !where_clauses.is_empty() {
             let mut first = true;
@@ -150,7 +165,7 @@ impl MySqlEnrollmentAdapter {
                 if !first {
                     qstr.push_str(" AND");
                 } else {
-                                    first = false;
+                    first = false;
                 }
                 qstr.push_str(&clause);
             }
@@ -163,10 +178,7 @@ impl EnrollmentService for MySqlEnrollmentAdapter {
     fn query_enrollment(&self, query: &EnrollmentQuery) -> Result<Vec<Enrollment>> {
         let qstr = self.build_sql_from_query(query);
         let enrollments = self.conn
-            .prep_exec(
-                qstr,
-                mysql::Params::Empty,
-            )
+            .prep_exec(qstr, mysql::Params::Empty)
             .map(|result| {
                 result
                     .map(|rowresult| rowresult.unwrap())

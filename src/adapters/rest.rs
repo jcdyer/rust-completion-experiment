@@ -11,7 +11,6 @@ use opaquekeys::{CourseKey, UsageKey};
 use crate::ports::{Result, ServiceError};
 use crate::ports::course::CourseService;
 
-
 pub struct CourseAdapter {
     api_root_url: String,
     oauth_token_url: String,
@@ -39,20 +38,24 @@ impl CourseAdapter {
         }
     }
 
-
     fn get_new_token(&self) -> Result<String> {
         let form = TokenRequest {
             grant_type: "client_credentials",
             client_id: CLIENT_ID.unwrap_or("open"),
             client_secret: CLIENT_SECRET.unwrap_or("sesame"),
         };
-        let resp = self.client.post(&self.oauth_token_url)
+        let resp = self.client
+            .post(&self.oauth_token_url)
             .form(&form)
             .send()
             .map_err(ServiceError::from_error)?;
         resp.status();
-        let data: serde_json::Value = serde_json::from_reader(resp).map_err(ServiceError::from_error)?;
-        Ok(data["access_token"].as_str().ok_or_else(|| ServiceError::NotFound)?.to_owned())
+        let data: serde_json::Value =
+            serde_json::from_reader(resp).map_err(ServiceError::from_error)?;
+        Ok(data["access_token"]
+            .as_str()
+            .ok_or_else(|| ServiceError::NotFound)?
+            .to_owned())
     }
 }
 
@@ -73,20 +76,24 @@ impl CourseService for CourseAdapter {
         let response = self.client
             .get(&format!(
                 "{}blocks/?course_id={}&requested_fields=children&all_blocks=true&depth=10",
-                self.api_root_url,
-                coursekey,
+                self.api_root_url, coursekey,
             ))
             .bearer_auth(self.access_token.borrow().to_owned().unwrap())
             .query(&params)
-            .send().map_err(ServiceError::from_error)?;
+            .send()
+            .map_err(ServiceError::from_error)?;
 
-        let data: serde_json::Value = serde_json::from_reader(response).map_err(ServiceError::from_error)?;
+        let data: serde_json::Value =
+            serde_json::from_reader(response).map_err(ServiceError::from_error)?;
         let blocks = data["blocks"].as_object().unwrap();
         let mut output = BTreeMap::new();
         for (block, value) in blocks {
             let blockkey = UsageKey::new(coursekey.clone(), block.clone());
             if let Some(children) = value["children"].as_array() {
-                let children = children.into_iter().map(|child| UsageKey::new(coursekey.clone(), child.as_str().unwrap().into())).collect();
+                let children = children
+                    .into_iter()
+                    .map(|child| UsageKey::new(coursekey.clone(), child.as_str().unwrap().into()))
+                    .collect();
                 output.insert(blockkey, children);
             } else {
                 output.insert(blockkey, Vec::new());
