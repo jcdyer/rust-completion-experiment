@@ -28,6 +28,7 @@ pub fn get_xblock_modes() -> BTreeMap<String, CompletionMode> {
     map.insert("ooyala".to_owned(), Completable);
     map.insert("poll".to_owned(), Completable);
     map.insert("survey".to_owned(), Completable);
+    map.insert("video".to_owned(), Completable);
     map.insert("image-explorer".to_owned(), Completable);
     map.insert("problem-builder".to_owned(), Completable);
     map.insert("group-project".to_owned(), Excluded);

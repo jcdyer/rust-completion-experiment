@@ -82,7 +82,7 @@ fn test_get_user_completion() {
 #[test]
 fn test_db_adapter() {
     let user = User {
-        username: "cliff".to_owned(),
+        username: "jcd".to_owned(),
     };
     let course: CourseKey = "course-v1:edX+DemoX+Demo_Course".parse().unwrap();
     let usagekeys: Vec<_> = vec![
@@ -95,20 +95,28 @@ fn test_db_adapter() {
         "block-v1:edX+DemoX+Demo_Course+type@html+block@intro"
             .parse()
             .unwrap(),
-        "block-v1:edX+DemoX+Demo_Course+type@survey+block@questionnaire"
+        "block-v1:edX+DemoX+Demo_Course+type@html+block@8293139743f34377817d537b69911530"
             .parse()
             .unwrap(),
-        "block-v1:edX+DemoX+Demo_Course+type@html+block@content"
+        "block-v1:edX+DemoX+Demo_Course+type@video+block@5c90cffecd9b48b188cbfea176bf7fe9"
             .parse()
             .unwrap(),
-        "block-v1:edX+DemoX+Demo_Course+type@html+block@retrospective"
+        "block-v1:edX+DemoX+Demo_Course+type@html+block@0a3b4139f51a4917a3aff9d519b1eeb6"
             .parse()
             .unwrap(),
     ].into_iter()
         .map(|key: PartialUsageKey| key.try_promote().unwrap())
         .collect();
 
-    let blockcompletion_service = db::MySqlBlockCompletionAdapter::new().expect("mysql connect");
+    let conn = db::edxapp_connect().expect("mysql connect");
+    let blockcompletion_service = {
+        let conn = conn.clone();
+        db::MySqlBlockCompletionAdapter::new(conn)
+    };
+    let enrollment_service = {
+        let conn = conn.clone();
+        db::MySqlEnrollmentAdapter::new(conn)
+    };
     let course_service = stubs::StubCourseAdapter::new(
         course.clone(),
         vec![
@@ -126,8 +134,6 @@ fn test_db_adapter() {
             .collect(),
     );
 
-    let enrollment_service =
-        stubs::StubEnrollmentAdapter::new(vec![(user.clone(), course.clone())]);
 
     let app = App::new(blockcompletion_service, course_service, enrollment_service);
     let result = app.get_user_completion(&user, &course).unwrap();

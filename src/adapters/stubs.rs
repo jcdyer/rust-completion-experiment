@@ -6,7 +6,7 @@ use crate::{BlockCompletion, User};
 use crate::ports::{Result, ServiceError};
 use crate::ports::blockcompletions::BlockCompletionService;
 use crate::ports::course::CourseService;
-use crate::ports::enrollment::{Enrollment, EnrollmentQuery, EnrollmentService, Role, State};
+use crate::ports::enrollment::{Enrollment, EnrollmentQuery, EnrollmentService};
 
 pub struct StubBlockCompletionAdapter {
     blockcompletions: Vec<BlockCompletion>,
@@ -53,8 +53,6 @@ impl StubEnrollmentAdapter {
             .map(|(user, course)| Enrollment {
                 user,
                 course,
-                role: Role::Learner,
-                state: State::Active,
             })
             .collect();
         StubEnrollmentAdapter { enrollments }

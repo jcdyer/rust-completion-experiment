@@ -7,16 +7,12 @@ use super::{Result, ServiceError};
 pub struct Enrollment {
     pub course: CourseKey,
     pub user: User,
-    pub role: Role,
-    pub state: State,
 }
 
 #[derive(Clone, Default, Debug, Eq, PartialEq)]
 pub struct EnrollmentQuery {
     pub courses: Option<Vec<CourseKey>>,
     pub users: Option<Vec<User>>,
-    pub roles: Option<Vec<Role>>,
-    pub states: Option<Vec<State>>,
 }
 
 impl EnrollmentQuery {
@@ -71,23 +67,8 @@ pub trait EnrollmentService {
         self.get_enrollment(user, course)
             .map(|enrollment| enrollment.is_some())
             .or_else(|err| match err {
-                ServiceError::MultipleResults => Ok(false),
+                ServiceError::MultipleResults => Ok(true),
                 err => Err(err),
             })
     }
-}
-
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub enum Role {
-    Learner,
-    TA,
-    Instructor,
-    SuperUser,
-    Other(String),
-}
-
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub enum State {
-    Active,
-    Inactive,
 }
