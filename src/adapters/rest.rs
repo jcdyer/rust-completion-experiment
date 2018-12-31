@@ -1,6 +1,5 @@
 use std::cell::RefCell;
 use std::collections::BTreeMap;
-use std::io::{self, Write};
 
 use reqwest;
 use serde_derive;
@@ -56,6 +55,12 @@ impl CourseAdapter {
             .as_str()
             .ok_or_else(|| ServiceError::NotFound)?
             .to_owned())
+    }
+}
+
+impl Default for CourseAdapter {
+    fn default() -> CourseAdapter {
+        CourseAdapter::new()
     }
 }
 
