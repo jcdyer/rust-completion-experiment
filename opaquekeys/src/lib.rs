@@ -1,3 +1,4 @@
+use std::error::Error;
 
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub enum KeyType {
@@ -9,6 +10,13 @@ pub enum KeyType {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct OpaqueKeyError;
 
+impl std::fmt::Display for OpaqueKeyError {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "OpaqueKeyError")
+    }
+}
+impl Error for OpaqueKeyError {
+}
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct CourseKey {

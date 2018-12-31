@@ -7,3 +7,7 @@ edition = "2018"
 [dependencies]
 opaquekeys = {"path" = "opaquekeys"}
 mysql = "*"
+reqwest = {git = "https://github.com/seanmonstar/reqwest", features = ["native-tls-vendored"]}
+serde = "*"
+serde_derive = "*"
+serde_json = "*"
