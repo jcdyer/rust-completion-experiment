@@ -62,12 +62,36 @@ impl CourseService for CourseAdapter {
         if !has_token {
             self.access_token.replace(self.get_new_token().ok());
         }
-        let mut response = self.client.get(&format!(
-            "{}blocks/?course_id={}&requested_fields=children&all_blocks=true&depth=10",
-            self.api_root_url,
-            coursekey,
-        )).bearer_auth(self.access_token.borrow().to_owned().unwrap()).send().map_err(ServiceError::from_error)?;
-        std::io::copy(&mut response, &mut std::io::stdout()).map_err(ServiceError::from_error)?;
-        Ok(BTreeMap::new())
+        let params = {
+            let mut params = BTreeMap::new();
+            params.insert("course_id", format!("{}", coursekey));
+            params.insert("requested_fields", "children".into());
+            params.insert("all_blocks", "true".into());
+            params.insert("depth", "10".into());
+            params
+        };
+        let response = self.client
+            .get(&format!(
+                "{}blocks/?course_id={}&requested_fields=children&all_blocks=true&depth=10",
+                self.api_root_url,
+                coursekey,
+            ))
+            .bearer_auth(self.access_token.borrow().to_owned().unwrap())
+            .query(&params)
+            .send().map_err(ServiceError::from_error)?;
+
+        let data: serde_json::Value = serde_json::from_reader(response).map_err(ServiceError::from_error)?;
+        let blocks = data["blocks"].as_object().unwrap();
+        let mut output = BTreeMap::new();
+        for (block, value) in blocks {
+            let blockkey = UsageKey::new(coursekey.clone(), block.clone());
+            if let Some(children) = value["children"].as_array() {
+                let children = children.into_iter().map(|child| UsageKey::new(coursekey.clone(), child.as_str().unwrap().into())).collect();
+                output.insert(blockkey, children);
+            } else {
+                output.insert(blockkey, Vec::new());
+            }
+        }
+        Ok(output)
     }
 }

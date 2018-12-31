@@ -5,9 +5,18 @@ authors = ["J. Cliff Dyer <jcd@sdf.org>"]
 edition = "2018"
 
 [dependencies]
-opaquekeys = {"path" = "opaquekeys"}
+clap = {version = "2", optional = true}
 mysql = "*"
+opaquekeys = {"path" = "opaquekeys"}
 reqwest = {git = "https://github.com/seanmonstar/reqwest", features = ["native-tls-vendored"]}
 serde = "*"
 serde_derive = "*"
 serde_json = "*"
+
+[features]
+cli = ["clap"]
+
+[[example]]
+name = "cli"
+required-features = ["cli"]
+

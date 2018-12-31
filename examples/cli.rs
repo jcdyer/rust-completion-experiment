@@ -3,14 +3,24 @@ use std::error::Error;
 use opaquekeys::CourseKey;
 
 use completion::{App, User};
-use completion::ports::ServiceError;
 use completion::adapters::{db, rest};
 
+
 fn main() -> Result<(), Box<Error>> {
-    let user = User {
-        username: "test_user".to_owned(),
-    };
-    let course: CourseKey = "course-v1:edX+DemoX+DemoCourse".parse()?;
+    let args = clap::App::new(env!("CARGO_PKG_NAME"))
+        .author(env!("CARGO_PKG_AUTHORS"))
+        .version(env!("CARGO_PKG_VERSION"))
+        .arg(clap::Arg::with_name("user")
+            .takes_value(true)
+            .required(true))
+        .arg(clap::Arg::with_name("course_key")
+            .takes_value(true)
+            .required(true))
+        .get_matches();
+
+    let username = args.value_of("user").unwrap().to_owned();
+    let user = User { username };
+    let course: CourseKey = args.value_of("course_key").unwrap().parse()?;
 
     let conn = db::edxapp_connect().expect("mysql connect");
     let blockcompletion_service = {
@@ -24,7 +34,9 @@ fn main() -> Result<(), Box<Error>> {
     let course_service = rest::CourseAdapter::new();
 
     let app = App::new(blockcompletion_service, course_service, enrollment_service);
-    let result = app.get_user_completion(&user, &course);
-    println!("result: {:?}", result);
+    let result = app.get_user_completion(&user, &course).unwrap();
+    for agg in result {
+        println!("{}: {}/{} ({:.2}%)", agg.block_key, agg.earned, agg.possible, agg.percent() * 100.0);
+    }
     Ok(())
 }

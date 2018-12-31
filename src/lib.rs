@@ -33,6 +33,16 @@ pub struct Aggregator {
     pub possible: f64,
 }
 
+impl Aggregator {
+    pub fn percent(&self) -> f64 {
+        if self.possible == 0.0 {
+            0.0
+        } else {
+            self.earned / self.possible
+        }
+    }
+}
+
 pub struct App<B, C, E>
 where
     B: BlockCompletionService,
@@ -71,7 +81,7 @@ where
             .is_enrolled(user, coursekey)
             .unwrap_or(true)
         {
-            let structure = self.course_service.get_course(coursekey).unwrap(); // CRASH!!!
+            let structure = self.course_service.get_course(coursekey).ok()?;
             let course = Course::from_structure(&structure);
             let blockcompletions = self.blockcompletion_service
                 .get_user_blockcompletions(user, coursekey)
