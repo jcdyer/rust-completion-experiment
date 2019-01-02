@@ -24,11 +24,22 @@ pub struct CourseKey {
     keytype: KeyType,
 }
 
+impl serde::Serialize for CourseKey {
+     fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+         s.serialize_str(&self.key)
+     }
+}
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct UsageKey {
     course_key: CourseKey,
     key: String,
+}
+
+impl serde::Serialize for UsageKey {
+     fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+         s.serialize_str(&self.key)
+     }
 }
 
 
@@ -37,6 +48,11 @@ pub struct PartialUsageKey {
     keytype: KeyType,
 }
 
+impl serde::Serialize for PartialUsageKey {
+     fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+         s.serialize_str(&self.key)
+     }
+}
 
 impl CourseKey {
     pub fn new(org: &str, course: &str, run: &str, keytype: KeyType) -> CourseKey {

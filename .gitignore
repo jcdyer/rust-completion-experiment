@@ -1,5 +1,6 @@
 /target
 **/*.rs.bk
 .vscode
+.env
 Cargo.lock
 opaquekeys/target

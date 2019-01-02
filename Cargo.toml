@@ -9,14 +9,20 @@ clap = {version = "2", optional = true}
 mysql = "*"
 opaquekeys = {"path" = "opaquekeys"}
 reqwest = {git = "https://github.com/seanmonstar/reqwest", features = ["native-tls-vendored"]}
-serde = "*"
-serde_derive = "*"
+serde = "1"
+serde_derive = "1"
 serde_json = "*"
+rocket = {version = "0.4", optional = true}
+rocket_contrib = {version = "*", optional = true}
 
 [features]
 cli = ["clap"]
+web = ["rocket", "rocket_contrib"]
 
 [[example]]
 name = "cli"
 required-features = ["cli"]
 
+[[example]]
+name = "web"
+required-features = ["web"]

@@ -2,6 +2,7 @@
 extern crate mysql;
 
 use opaquekeys::{CourseKey, UsageKey};
+use serde_derive::{Serialize, Deserialize};
 
 use crate::aggregator::Course;
 use crate::ports::blockcompletions::BlockCompletionService;
@@ -13,7 +14,7 @@ pub mod aggregator;
 pub mod ports;
 pub mod xblock;
 
-#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct User {
     pub username: String,
 }
@@ -25,7 +26,7 @@ pub struct BlockCompletion {
     pub completion: f64,
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Serialize)]
 pub struct Aggregator {
     pub user: User,
     pub block_key: UsageKey,
