@@ -6,14 +6,14 @@ edition = "2018"
 
 [dependencies]
 clap = {version = "2", optional = true}
-mysql = "*"
-opaquekeys = {"path" = "opaquekeys"}
+mysql = "15"
+opaquekeys = {path = "opaquekeys"}
 reqwest = {git = "https://github.com/seanmonstar/reqwest", features = ["native-tls-vendored"]}
 serde = "1"
 serde_derive = "1"
-serde_json = "*"
+serde_json = "1"
 rocket = {version = "0.4", optional = true}
-rocket_contrib = {version = "*", optional = true}
+rocket_contrib = {version = "0.4", optional = true}
 
 [features]
 cli = ["clap"]

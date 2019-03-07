@@ -1,4 +1,5 @@
 use std::error::Error;
+use std::borrow::Cow;
 
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub enum KeyType {
@@ -15,57 +16,58 @@ impl std::fmt::Display for OpaqueKeyError {
         write!(f, "OpaqueKeyError")
     }
 }
+
 impl Error for OpaqueKeyError {
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub struct CourseKey {
-    key: String,
+pub struct CourseKey<'a> {
+    key: Cow<'a, str>,
     keytype: KeyType,
 }
 
-impl serde::Serialize for CourseKey {
+impl<'a> serde::Serialize for CourseKey<'a> {
      fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
          s.serialize_str(&self.key)
      }
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub struct UsageKey {
-    course_key: CourseKey,
-    key: String,
+pub struct UsageKey<'a> {
+    course_key: CourseKey<'a>,
+    key: Cow<'a, str>,
 }
 
-impl serde::Serialize for UsageKey {
+impl<'a> serde::Serialize for UsageKey<'a> {
      fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
          s.serialize_str(&self.key)
      }
 }
 
 
-pub struct PartialUsageKey {
-    key: String,
+pub struct PartialUsageKey<'a> {
+    key: Cow<'a, str>,
     keytype: KeyType,
 }
 
-impl serde::Serialize for PartialUsageKey {
+impl<'a> serde::Serialize for PartialUsageKey<'a> {
      fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
          s.serialize_str(&self.key)
      }
 }
 
-impl CourseKey {
-    pub fn new(org: &str, course: &str, run: &str, keytype: KeyType) -> CourseKey {
+impl<'a> CourseKey<'a> {
+    pub fn new(org: &str, course: &str, run: &str, keytype: KeyType) -> CourseKey<'a> {
         match keytype {
             keytype @ KeyType::Old => {
                 CourseKey {
-                    key: format!("{}/{}/{}", org, course, run),
+                    key: Cow::from(format!("{}/{}/{}", org, course, run)),
                     keytype,
                 }
             }
             keytype @ KeyType::New => {
                 CourseKey {
-                    key: format!("course-v1:{}+{}+{}", org, course, run),
+                    key: Cow::from(format!("course-v1:{}+{}+{}", org, course, run)),
                     keytype,
                 }
             }
@@ -99,12 +101,12 @@ impl CourseKey {
         &self.key
     }
 
-    pub fn make_usage_key(&self, blocktype: &str, name: &str) -> UsageKey {
-        UsageKey::from_parts(self.clone(), blocktype, name)
+    pub fn make_usage_key<'r, 'b>(&'r self, blocktype: &'b str, name: &'b str) -> UsageKey<'a> {
+        UsageKey::from_parts(self.to_owned(), blocktype, name)
     }
 }
 
-impl std::str::FromStr for CourseKey {
+impl<'a> std::str::FromStr for CourseKey<'a> {
     type Err = OpaqueKeyError;
 
     fn from_str(key: &str) -> Result<Self, Self::Err> {
@@ -115,27 +117,27 @@ impl std::str::FromStr for CourseKey {
             KeyType::Old
         };
         Ok(CourseKey {
-            key: key.to_owned(),
+            key: Cow::from(key),
             keytype,
         })
     }
 }
 
-impl std::fmt::Display for CourseKey {
+impl<'a> std::fmt::Display for CourseKey<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "{}", self.key())
     }
 }
 
-impl UsageKey {
-    pub fn new(course_key: CourseKey, key: String) -> UsageKey {
+impl<'a> UsageKey<'a> {
+    pub fn new<K: Into<Cow<'a, str>>>(course_key: CourseKey<'a>, key: K) -> UsageKey<'a> {
         UsageKey {
             course_key,
-            key,
+            key: Cow::from(key),
         }
     }
 
-    pub fn from_parts(course_key: CourseKey, blocktype: &str, name: &str) -> UsageKey {
+    pub fn from_parts<'r, 'b>(course_key: &'r CourseKey<'a>, blocktype: &'b str, name: &'b str) -> UsageKey<'a> {
         UsageKey::new(
             course_key.clone(),
             match &course_key.keytype {
@@ -203,15 +205,15 @@ impl UsageKey {
 }
 
 
-impl std::fmt::Display for UsageKey {
+impl<'a> std::fmt::Display for UsageKey<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "{}", self.key())
     }
 }
 
 
-impl PartialUsageKey {
-    pub fn try_promote(&self) -> Option<UsageKey> {
+impl<'a> PartialUsageKey<'a> {
+    pub fn try_promote(&self) -> Option<UsageKey<'a>> {
         match self.keytype {
             KeyType::Old => None,
             KeyType::New => {
@@ -225,8 +227,8 @@ impl PartialUsageKey {
         }
     }
 
-    pub fn map_into_course(&self, course_key: CourseKey) -> UsageKey {
-        UsageKey::new(course_key, self.key.clone())
+    pub fn map_into_course(&self, course_key: CourseKey<'a>) -> UsageKey<'a> {
+        UsageKey::new(course_key, Cow::from(self.key))
     }
 
     pub fn org(&self) -> &str {
@@ -282,7 +284,7 @@ impl PartialUsageKey {
 }
 
 
-impl std::str::FromStr for PartialUsageKey {
+impl<'a> std::str::FromStr for PartialUsageKey<'a> {
     type Err = OpaqueKeyError;
 
     fn from_str(key: &str) -> Result<Self, Self::Err> {
@@ -297,7 +299,7 @@ impl std::str::FromStr for PartialUsageKey {
                 if !blocktype.starts_with("type@") || !name.starts_with("block@") {
                     Err(OpaqueKeyError)
                 } else {
-                    Ok(PartialUsageKey { key: key.to_owned(), keytype: KeyType::New })
+                    Ok(PartialUsageKey { key: Cow::from(key), keytype: KeyType::New })
                 }
             } else {
                 Err(OpaqueKeyError)
@@ -305,7 +307,7 @@ impl std::str::FromStr for PartialUsageKey {
         } else if key.starts_with("i4x://") {
             let chunks: Vec<&str> = key[6..].split("/").collect();
             if chunks.len() == 4 {
-                Ok(PartialUsageKey { key: key.to_owned(), keytype: KeyType::Old })
+                Ok(PartialUsageKey { key: Cow::from(key), keytype: KeyType::Old })
             } else {
                 Err(OpaqueKeyError)
             }
@@ -316,7 +318,7 @@ impl std::str::FromStr for PartialUsageKey {
 }
 
 
-impl std::fmt::Display for PartialUsageKey {
+impl<'a> std::fmt::Display for PartialUsageKey<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "{}", self.key())
     }
