@@ -11,8 +11,8 @@ use crate::{BlockCompletion, User};
 pub fn edxapp_connect() -> Option<mysql::Pool> {
     match mysql::Pool::new(format!(
         "mysql://{}:{}@{}:{}/{}",
-        std::env::var("EDXAGG_MYSQL_USER").unwrap(),
-        std::env::var("EDXAGG_MYSQL_PASSWORD").unwrap(),
+        std::env::var("EDXAGG_MYSQL_USER").expect("EDXAGG_MYSQL_USER not provided"),
+        std::env::var("EDXAGG_MYSQL_PASSWORD").expect("EDXAGG_MYSQL_PASSWORD not provided"),
         std::env::var("EDXAGG_MYSQL_HOST").unwrap_or_else(|_| "localhost".to_string()),
         std::env::var("EDXAGG_MYSQL_PORT").unwrap_or_else(|_| "3306".to_string()),
         std::env::var("EDXAGG_MYSQL_DATABASE").unwrap_or_else(|_| "completion".to_string()),

@@ -20,7 +20,7 @@ pub struct CourseAdapter {
 static CLIENT_ID: Option<&'static str> = option_env!("EDXAGG_OAUTH_CLIENT_ID");
 static CLIENT_SECRET: Option<&'static str> = option_env!("EDXAGG_OAUTH_CLIENT_ID");
 
-#[derive(serde_derive::Serialize, serde_derive::Deserialize)]
+#[derive(Debug, serde_derive::Serialize, serde_derive::Deserialize)]
 struct TokenRequest<'a> {
     grant_type: &'a str,
     client_id: &'a str,
@@ -48,7 +48,6 @@ impl CourseAdapter {
             .form(&form)
             .send()
             .map_err(ServiceError::from_error)?;
-        resp.status();
         let data: serde_json::Value =
             serde_json::from_reader(resp).map_err(ServiceError::from_error)?;
         Ok(data["access_token"]
@@ -68,7 +67,7 @@ impl CourseService for CourseAdapter {
     fn get_course(&self, coursekey: &CourseKey) -> Result<BTreeMap<UsageKey, Vec<UsageKey>>> {
         let has_token = self.access_token.borrow().is_some();
         if !has_token {
-            self.access_token.replace(self.get_new_token().ok());
+            self.access_token.replace(Some(self.get_new_token()?));
         }
         let params = {
             let mut params = BTreeMap::new();
