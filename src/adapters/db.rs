@@ -15,7 +15,7 @@ pub fn edxapp_connect() -> Option<mysql::Pool> {
         std::env::var("EDXAGG_MYSQL_PASSWORD").expect("EDXAGG_MYSQL_PASSWORD not provided"),
         std::env::var("EDXAGG_MYSQL_HOST").unwrap_or_else(|_| "localhost".to_string()),
         std::env::var("EDXAGG_MYSQL_PORT").unwrap_or_else(|_| "3306".to_string()),
-        std::env::var("EDXAGG_MYSQL_DATABASE").unwrap_or_else(|_| "completion".to_string()),
+        std::env::var("EDXAGG_MYSQL_DATABASE").expect("EDXAGG_MYSQL_DATABASE not provided"),
     )) {
         Ok(conn) => Some(conn),
         Err(error) => panic!("{}", error),

@@ -80,6 +80,17 @@ fn test_get_user_completion() {
 
 #[test]
 fn test_db_adapter() {
+    // This test needs a configured connection to an edxapp DB.  You will need
+    // to set the following variables:
+    //
+    // MYSQL_EDXAGG_USER
+    // MYSQL_EDXAGG_PASSWORD
+    // MYSQL_EDXAGG_DATABASE
+    //
+    // And optionally:
+    //
+    // MYSQL_EDXAGG_HOST (defaults to localhost)
+    // MYSQL_EDXAGG_PORT (defaults to 3306)
     let user = User {
         username: "jcd".to_owned(),
     };
