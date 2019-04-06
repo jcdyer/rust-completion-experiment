@@ -5,26 +5,21 @@ use opaquekeys::CourseKey;
 use completion::{App, User};
 use completion::adapters::{db, rest};
 
+use structopt::StructOpt;
+
+#[derive(Debug, StructOpt)]
+#[structopt(name = "rust-completion-experiment")]
+
+struct CliOptions {
+    #[structopt(parse(try_from_str))]
+    user: User,
+    #[structopt(parse(try_from_str))]
+    course_key: CourseKey,
+}
+
 fn main() -> Result<(), Box<Error>> {
-    let args = clap::App::new(env!("CARGO_PKG_NAME"))
-        .author(env!("CARGO_PKG_AUTHORS"))
-        .version(env!("CARGO_PKG_VERSION"))
-        .arg(
-            clap::Arg::with_name("user")
-                .takes_value(true)
-                .required(true),
-        )
-        .arg(
-            clap::Arg::with_name("course_key")
-                .takes_value(true)
-                .required(true),
-        )
-        .get_matches();
-
-    let username = args.value_of("user").unwrap().to_owned();
-    let user = User { username };
-    let course: CourseKey = args.value_of("course_key").unwrap().parse()?;
-
+    let CliOptions { user, course_key } = CliOptions::from_args();
+    dbg!(&course_key);
     let conn = db::edxapp_connect().expect("mysql connect");
     let blockcompletion_service = {
         let conn = conn.clone();
@@ -37,7 +32,7 @@ fn main() -> Result<(), Box<Error>> {
     let course_service = rest::CourseAdapter::new();
 
     let app = App::new(blockcompletion_service, course_service, enrollment_service);
-    let result = app.get_user_completion(&user, &course).unwrap();
+    let result = app.get_user_completion(&user, &course_key).unwrap();
     for agg in result {
         println!(
             "{}: {}/{} ({:.2}%)",
