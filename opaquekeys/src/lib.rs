@@ -1,4 +1,6 @@
 use std::error::Error;
+use std::fmt;
+use std::str::FromStr;
 
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub enum KeyType {
@@ -28,6 +30,30 @@ impl serde::Serialize for CourseKey {
      fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
          s.serialize_str(&self.key)
      }
+}
+
+impl<'de> serde::de::Deserialize<'de> for CourseKey {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::de::Deserializer<'de>,
+    {
+        struct CourseKeyVisitor;
+        impl<'de> serde::de::Visitor <'de> for CourseKeyVisitor {
+            type Value = CourseKey;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("Expecting a valid CourseKey")
+            }
+
+            fn visit_str<E>(self, value: &str) -> Result<CourseKey, E>
+            where
+                E: serde::de::Error,
+            {
+                FromStr::from_str(&value).map_err(|_e| E::custom(format!("invalid CourseKey {}", value)))
+            }
+        }
+        deserializer.deserialize_str(CourseKeyVisitor)
+    }
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
@@ -360,5 +386,13 @@ mod tests {
         )
     }
 
+    #[test]
+    fn deserialize_course_key() {
+        use serde_json::from_str;
+        let keys: Vec<CourseKey> = from_str(r#"["course-v1:edX+DemoX+Demo_Course", "edx/DemoX/V1"]"#).unwrap();
+        assert_eq!(keys.len(), 2);
+        assert_eq!(format!("{}", keys[0]), "course-v1:edX+DemoX+Demo_Course");
+        assert_eq!(format!("{}", keys[1]), "edx/DemoX/V1");
+    }
 
 }
