@@ -92,7 +92,7 @@ fn test_db_adapter() {
     // MYSQL_EDXAGG_HOST (defaults to localhost)
     // MYSQL_EDXAGG_PORT (defaults to 3306)
     let user = User {
-        username: "jcd".to_owned(),
+        username: "cliff".to_owned(),
     };
     let course: CourseKey = "course-v1:edX+DemoX+Demo_Course".parse().unwrap();
     let usagekeys: Vec<_> = vec![
@@ -152,13 +152,13 @@ fn test_db_adapter() {
             Aggregator {
                 user: user.clone(),
                 block_key: usagekeys[1].clone(),
-                earned: 3.0,
+                earned: 1.0,
                 possible: 4.0,
             },
             Aggregator {
                 user: user.clone(),
                 block_key: usagekeys[0].clone(),
-                earned: 3.0,
+                earned: 1.0,
                 possible: 4.0,
             },
         ]
