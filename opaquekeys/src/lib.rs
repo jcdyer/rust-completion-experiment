@@ -1,5 +1,7 @@
+use std::borrow::Cow;
 use std::error::Error;
 use std::fmt;
+use std::marker::PhantomData;
 use std::str::FromStr;
 
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
@@ -26,10 +28,36 @@ pub struct CourseKey {
     keytype: KeyType,
 }
 
+
+
 impl serde::Serialize for CourseKey {
      fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
          s.serialize_str(&self.key)
      }
+}
+
+struct FromStrVisitor<T: std::str::FromStr> {
+    t: PhantomData<T>
+}
+
+impl<T: FromStr> FromStrVisitor<T> {
+    fn new() -> FromStrVisitor<T> {
+        FromStrVisitor { t: PhantomData }
+    }
+}
+impl<'de, T: FromStr> serde::de::Visitor <'de> for FromStrVisitor<T> {
+    type Value = T;
+
+    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        formatter.write_str("Expecting a valid type that implements FromStr")
+    }
+
+    fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        FromStr::from_str(value).map_err(|_e| E::custom(format!("invalid value: {}", value)))
+    }
 }
 
 impl<'de> serde::de::Deserialize<'de> for CourseKey {
@@ -37,22 +65,8 @@ impl<'de> serde::de::Deserialize<'de> for CourseKey {
     where
         D: serde::de::Deserializer<'de>,
     {
-        struct CourseKeyVisitor;
-        impl<'de> serde::de::Visitor <'de> for CourseKeyVisitor {
-            type Value = CourseKey;
 
-            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-                formatter.write_str("Expecting a valid CourseKey")
-            }
-
-            fn visit_str<E>(self, value: &str) -> Result<CourseKey, E>
-            where
-                E: serde::de::Error,
-            {
-                FromStr::from_str(&value).map_err(|_e| E::custom(format!("invalid CourseKey {}", value)))
-            }
-        }
-        deserializer.deserialize_str(CourseKeyVisitor)
+        deserializer.deserialize_str(FromStrVisitor::new())
     }
 }
 
@@ -68,6 +82,15 @@ impl serde::Serialize for UsageKey {
      }
 }
 
+
+impl<'de> serde::de::Deserialize<'de> for PartialUsageKey {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::de::Deserializer<'de>,
+    {
+        deserializer.deserialize_str(FromStrVisitor::new())
+    }
+}
 
 pub struct PartialUsageKey {
     key: String,
@@ -147,11 +170,13 @@ impl std::str::FromStr for CourseKey {
     }
 }
 
+
 impl std::fmt::Display for CourseKey {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "{}", self.key())
     }
 }
+
 
 impl UsageKey {
     pub fn new(course_key: CourseKey, key: String) -> UsageKey {
@@ -162,8 +187,9 @@ impl UsageKey {
     }
 
     pub fn from_parts(course_key: CourseKey, blocktype: &str, name: &str) -> UsageKey {
+        let course_key_cloned = course_key.clone();
         UsageKey::new(
-            course_key.clone(),
+            course_key_cloned,
             match &course_key.keytype {
                 &KeyType::Old => format!("i4x://{}/{}/{}/{}", course_key.org(), course_key.course(), blocktype, name),
                 &KeyType::New => format!("block-v1:{}+{}+{}+type@{}+block@{}", course_key.org(), course_key.course(), course_key.run(), blocktype, name),
@@ -251,8 +277,8 @@ impl PartialUsageKey {
         }
     }
 
-    pub fn map_into_course(&self, course_key: CourseKey) -> UsageKey {
-        UsageKey::new(course_key, self.key.clone())
+    pub fn map_into_course(self, course_key: CourseKey) -> UsageKey {
+        UsageKey::new(course_key, self.key)
     }
 
     pub fn org(&self) -> &str {
@@ -377,12 +403,12 @@ mod tests {
 
     #[test]
     fn basic_usage_key() {
+        let course = "course-v1:edX+DemoX+Demo2018".parse().unwrap();
         assert_eq!(
             "block-v1:edX+DemoX+Demo2018+type@html+block@introduction".parse::<PartialUsageKey>()
                 .unwrap()
-                .try_promote()
-                .unwrap(),
-            UsageKey::from_parts("course-v1:edX+DemoX+Demo2018".parse().unwrap(), "html", "introduction")
+                .map_into_course(&course),
+            UsageKey::from_parts(&"course-v1:edX+DemoX+Demo2018".parse().unwrap(), "html", "introduction")
         )
     }
 
@@ -395,4 +421,13 @@ mod tests {
         assert_eq!(format!("{}", keys[1]), "edx/DemoX/V1");
     }
 
+    #[test]
+    fn deserialize_partial_usage_key() {
+        use serde_json::from_str;
+
+        let keys: Vec<PartialUsageKey> = from_str(r#"["block-v1:edX+DemoX+Demo_Course+type@video+block@1234", "i4x://edx/DemoX/video/1234"]"#).unwrap();
+        assert_eq!(keys.len(), 2);
+        assert_eq!(format!("{}", keys[0]), "block-v1:edX+DemoX+Demo_Course+type@video+block@1234");
+        assert_eq!(format!("{}", keys[1]), "i4x://edx/DemoX/video/1234");
+    }
 }
